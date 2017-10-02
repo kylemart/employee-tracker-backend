@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  postgres-service:
+    image: postgres:latest
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  migration-service:
+    build: .
+    depends_on:
+      - postgres-service
+    command: ["./wait-for-it.sh", "postgres-service:5432", "--", "lapis", "migrate", "production"]
+
+  main-service:
+    build: .
+    ports:
+      - 80:80
+    depends_on:
+      - migration-service
+      
+volumes:
+  postgres-data:
+    external: true

@@ -8,7 +8,7 @@ Group 19
   2. download Project folders
   3. create `bin/secret.lua` with the following contents:
 ```Lua
-return "YOUR_SECRET_HERE"
+return "YOUR_SECRET_HERE" -- change me
 ```
   4. run `docker volume create postgres-data`
   5. run `docker-compose up`

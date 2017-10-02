@@ -1,2 +1,2 @@
 src/secret.moon
-bin/secret.lua
+*.lua

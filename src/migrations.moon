@@ -7,6 +7,7 @@ import types, create_table from require "lapis.db.schema"
 			{"username", types.varchar unique: true} -- unique username
 			{"password_hash", types.varchar} -- md5 digest of password+salt
 			{"salt", types.varchar} -- UUID generated at signup
+			-- multiple groups
 			"PRIMARY KEY (id)"
 		})
 }

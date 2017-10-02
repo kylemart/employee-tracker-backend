@@ -1,5 +1,5 @@
 lapis = require "lapis"
-config = require "lapis.config".get!
+config = require("lapis.config").get!
 
 inspect = require "inspect"
 crypto = require "crypto"

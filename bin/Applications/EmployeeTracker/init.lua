@@ -1,5 +1,5 @@
 local lapis = require("lapis")
-local config = require(("lapis.config").get())
+local config = require("lapis.config").get()
 local inspect = require("inspect")
 local crypto = require("crypto")
 local jwt = require("luajwt")

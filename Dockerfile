@@ -9,4 +9,3 @@ RUN luarocks install luacrypto  \
 
 # setup project
 COPY ./bin /opt/openresty/nginx/conf
-EXPOSE 80

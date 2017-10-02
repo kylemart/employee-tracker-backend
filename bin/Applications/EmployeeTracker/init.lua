@@ -1,5 +1,5 @@
 local lapis = require("lapis")
-local config = require("lapis.config").get()
+local config = require(("lapis.config").get())
 local inspect = require("inspect")
 local crypto = require("crypto")
 local jwt = require("luajwt")
@@ -76,16 +76,20 @@ end
 APIFailure = function(data)
   return APIResult(data, false)
 end
+local encodeJWT
+encodeJWT = function(data)
+  return jwt.encode(data, config.secret)
+end
 local generateToken
 generateToken = function(user)
-  return jwt.encode({
+  return encodeJWT({
     id = user.id,
     time = os.time()
-  }, config.secret)
+  })
 end
 local isFile
 isFile = function(input)
-  return type(input == "table") and input.filename and input.filename ~= "" and input.content and input.content ~= "" and input["content-type"] and input["content-type"] ~= ""
+  return type(input == "table" and input.filename and input.filename ~= "" and input.content and input.content ~= "" and input["content-type"] and input["content-type"] ~= "")
 end
 local requiresAuth
 requiresAuth = function(fn)

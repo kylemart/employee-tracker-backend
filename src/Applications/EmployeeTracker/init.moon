@@ -32,11 +32,12 @@ APIResult = (data, success) ->
 APISuccess = (data) -> APIResult data, true
 APIFailure = (data) -> APIResult data, false
 
+encodeJWT = (data) -> jwt.encode data, config.secret
+
 generateToken = (user) ->
-	jwt.encode
+	encodeJWT
 		id: user.id
-		time: os.time!,
-		config.secret
+		time: os.time!
 
 isFile = (input) ->
 	type input == "table" and

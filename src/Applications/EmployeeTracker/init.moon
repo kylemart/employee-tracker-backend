@@ -84,7 +84,7 @@ class EmployeeTracker extends lapis.Application
 
 	[images: "/images/:name"]: =>
 		file = io.open "images/#{@params.name}", "rb"
-		content = file\read"*all"
+		content = file\read "*all"
 		file\close!
 		return {content_type: "image/png"}, content
 

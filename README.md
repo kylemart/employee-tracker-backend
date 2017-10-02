@@ -6,7 +6,7 @@ Group 19
 # Usage
   1. install [Docker](https://store.docker.com/editions/community/docker-ce-desktop-windows)
   2. download Project folders
-  3. create a file bin/secret.lua with the following contents:
+  3. create `bin/secret.lua` with the following contents:
 ```Lua
 return "YOUR_SECRET_HERE"
 ```

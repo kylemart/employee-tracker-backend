@@ -78,7 +78,7 @@ class EmployeeTracker extends lapis.Application
 
 		file = io.open "images/#{@params.file.filename}", "w"
 		file\write @params.file.content
-		file\close!
+		file\close! 
 
 		APISuccess "Uploaded!"
 

@@ -1,2 +1,6 @@
-src/secret.moon
+secret.moon
+secret.moon
+lapis_environment.moon
 *.lua
+logs/
+nginx.conf.compiled

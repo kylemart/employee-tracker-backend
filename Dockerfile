@@ -8,4 +8,13 @@ RUN luarocks install luacrypto  \
     && luarocks install inspect
 
 # setup project
-COPY ./bin /opt/openresty/nginx/conf
+RUN mkdir -p ~/Project/src  \
+    && mkdir -p ~/Project/bin
+COPY . ~/Project/
+RUN cd ~/Project/src        \
+    && moonc -t ./../bin .
+
+WORKDIR ~/Project/bin
+
+# run lapis
+CMD ["lapis", "server"]

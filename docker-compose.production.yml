@@ -16,13 +16,13 @@ services:
 
   main-service:
     build: .
-    volumes:
-      - ./bin:~/Project/bin
+    environment:
+      - LAPIS_ENV=production
     ports:
       - 80:80
     depends_on:
       - migration-service
-      
+
 volumes:
   postgres-data:
     external: true

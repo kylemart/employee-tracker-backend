@@ -1,10 +1,6 @@
 package.path ..= ";./?/init.lua"
 
 lapis = require "lapis"
-
-print "Environment: #{require("lapis.config").get!._name}"
-
-lapis = require "lapis"
 config = require("lapis.config").get!
 
 inspect = require "inspect"
@@ -68,9 +64,6 @@ existsIn = (arr, elem) ->
 	return false
 
 class EmployeeTracker extends lapis.Application
-	@path: "/EmployeeTracker"
-	@name: "EmployeeTracker_"
-
 	default_route: =>
 		if @req.parsed_url.path\match("./$")
 			return {
@@ -86,28 +79,18 @@ class EmployeeTracker extends lapis.Application
 
 	handle_404: => {layout: false}, "Failed to find route: #{@req.cmd_url}"
 
-	[index: "/"]: => "Hello World"
+	[index: "/"]: => "Hello World v7"
 
 	[test: "/test"]: requiresAuth (user) =>
 		return APIFailure "File missing!" unless @params.file
 		return APIFailure "File invalid!" unless isFile @params.file
-
 		contentPrefix, contentSuffix = @params.file["content-type"]\match "^(.+)/(.+)$"
 		return APIFailure "File must be image!" unless contentPrefix == "image"
 		return APIFailure "Invalid image type!" unless existsIn VALID_IMAGE_TYPES, contentSuffix
-
 		file = io.open "images/#{@params.file.filename}", "w"
 		file\write @params.file.content
-		file\close! 
-
-		APISuccess "Uploaded!"
-
-	[images: "/images/:name"]: =>
-		file = io.open "images/#{@params.name}", "rb"
-		content = file\read "*all"
 		file\close!
-		return {content_type: "image/png"}, content
-
+		APISuccess "Uploaded!"
 
 	[login: "/login"]: =>
 		return APIFailure "Missing username!" unless @params.username
@@ -124,13 +107,11 @@ class EmployeeTracker extends lapis.Application
 		return APIFailure "Missing password!" unless @params.password
 		user = Users\find username: @params.username
 		return APIFailure "Username already exists!" if user
-
 		salt = uuid!
 		user = Users\create
 			username: @params.username
 			password_hash: crypto.digest "md5", @params.password .. salt
 			salt: salt
-
 		token = generateToken user
 		return APIFailure "Failed to generate token!" unless token
 		APISuccess token: token

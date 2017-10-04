@@ -8,13 +8,17 @@ RUN luarocks install luacrypto  \
     && luarocks install inspect
 
 # setup project
-RUN mkdir -p ~/Project/src  \
-    && mkdir -p ~/Project/bin
-COPY . ~/Project/
-RUN cd ~/Project/src        \
-    && moonc -t ./../bin .
+RUN mkdir -p /Project/src       \
+    && mkdir -p /Project/bin
+COPY ./bin /Project/bin
+COPY ./src /Project/src
+RUN cd /Project/src             \
+    && moonc -t ./../bin .      \
+    && cd /Project/bin
 
-WORKDIR ~/Project/bin
+WORKDIR /Project/bin
+EXPOSE 80
 
 # run lapis
-CMD ["lapis", "server"]
+CMD nohup sh -c "cd /Mount/src && moonc -w -t /Project/bin . >> /dev/null &" \
+    && lapis server $LAPIS_ENV

@@ -13,3 +13,5 @@ return "YOUR_SECRET_HERE" -- change me
   4. run `docker volume create postgres-data`
   5. run `docker-compose up`
   6. navigate to `http://localhost/EmployeeTracker`
+
+### Routes

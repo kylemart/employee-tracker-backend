@@ -13,8 +13,9 @@ RUN mkdir -p /Project/src       \
 COPY ./bin /Project/bin
 COPY ./src /Project/src
 RUN cd /Project/src             \
-    && moonc -t ./../bin .      \
-    && cd /Project/bin
+    && moonc -t /Project/bin .  \
+    && cd /Project/bin          \
+    && chmod +x /Project/bin/wait-for-it.sh
 
 WORKDIR /Project/bin
 EXPOSE 80

@@ -79,7 +79,7 @@ class EmployeeTracker extends lapis.Application
 
 	handle_404: => {layout: false}, "Failed to find route: #{@req.cmd_url}"
 
-	[index: "/"]: => "Hello World v8"
+	[index: "/"]: => APISuccess "Hello World"
 
 	[test: "/test"]: requiresAuth (user) =>
 		return APIFailure "File missing!" unless @params.file

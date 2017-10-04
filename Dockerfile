@@ -21,5 +21,7 @@ WORKDIR /Project/bin
 EXPOSE 80
 
 # run lapis
-CMD nohup sh -c "cd /Mount/src && moonc -w -t /Project/bin . >> /dev/null &" \
+CMD if [ $LAPIS_ENV = 'development' ]; then                                         \
+        nohup sh -c "cd /Mount/src && moonc -w -t /Project/bin . >> /dev/null &";   \
+    fi                                                                              \
     && lapis server $LAPIS_ENV

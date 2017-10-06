@@ -1,7 +1,8 @@
 package.path ..= ";./?/init.lua"
 
 lapis = require "lapis"
-config = require("lapis.config").get!
+db = require "lapis.db"
+config = require"lapis.config".get!
 
 inspect = require "inspect"
 crypto = require "crypto"
@@ -11,11 +12,55 @@ socket = require "socket"
 
 uuid.seed!
 
+import capture_errors, yield_error from require "lapis.application"
+import assert_valid from require "lapis.validate"
 import Model from require "lapis.db.model"
 
 VALID_IMAGE_TYPES = {"png", "jpg"}
 
+existsIn = (arr, elem) ->
+	for v in *arr
+		return true if v == elem
+	return false
+
+insertIfNotExistsIn = (arr, elem) ->
+	unless existsIn arr, elem
+		arr[#arr + 1] = elem
+
+tobool = (input) ->
+	if input == "true"
+		return true
+	elseif input == "false"
+		return false
+	else
+		return nil
+
+encodeJWT = (data) -> jwt.encode data, config.secret
+
 class Users extends Model
+	-- static methods
+	getByEmail: (email) => @find email: email
+	getById: (id) => @find id: id
+
+	-- methods
+	isInGroupById: (id) => existsIn @groups, id
+	generateToken: =>
+		encodeJWT
+			id: @id
+			time: os.time!
+
+class Groups extends Model
+	getById: (id) => @find id: id
+	getByName: (name) => @find name: name
+
+GROUP_EVERYONE_ID = 1
+GROUP_ADMIN_ID = 2
+
+api = (fn) ->
+	return capture_errors {
+		on_error: => json: @errors[1]
+		fn
+	}
 
 local APISuccess, APIFailure
 
@@ -23,45 +68,41 @@ APIResult = (data, success) ->
 	dataType = type data
 	if dataType == "table"
 		data.success = success
-		return json: data
+		yield_error data
 	elseif dataType == "string"
-		return json:
+		bin =
 			success: success
 			message: data
+		yield_error bin
 	else
 		APIFailure "Invalid result type of #{type data}"
 
 APISuccess = (data) -> APIResult data, true
 APIFailure = (data) -> APIResult data, false
 
-encodeJWT = (data) -> jwt.encode data, config.secret
-
-generateToken = (user) ->
-	encodeJWT
-		id: user.id
-		time: os.time!
-
 isFile = (input) ->
-	type input == "table" and
-	input.filename and
-	input.filename != "" and
-	input.content and
-	input.content != "" and
-	input["content-type"] and
+	type input == "table"			and
+	input.filename					and
+	input.filename != ""			and
+	input.content					and
+	input.content != ""				and
+	input["content-type"]			and
 	input["content-type"] != ""
 
-requiresAuth = (fn) -> =>
+requireAuth = (fn) -> (...) =>
 	if token = @req.headers["Authorization"]
 		if decoded = jwt.decode token, config.secret
 			if decoded.id
-				if user = Users\find id: decoded.id
-					return fn self, user
-	return APIFailure "Invalid token!"
+				if user = Users\getById decoded.id
+					@user = user
+					return fn(self, ...)
+	APIFailure "Invalid token!"
 
-existsIn = (arr, elem) ->
-	for v in *arr
-		return true if v == elem
-	return false
+requireAdmin = (fn) -> (...) =>
+	if @user and @user\isInGroupById GROUP_ADMIN_ID
+		return fn(self, ...)
+	APIFailure "Invalid permissions!"
+
 
 class EmployeeTracker extends lapis.Application
 	default_route: =>
@@ -79,43 +120,84 @@ class EmployeeTracker extends lapis.Application
 
 	handle_404: => {layout: false}, "Failed to find route: #{@req.cmd_url}"
 
-	[index: "/"]: => APISuccess "Hello World"
+	[index: "/"]: api => APISuccess "Hello World"
 
-	[test: "/test"]: requiresAuth (user) =>
-		return APIFailure "File missing!" unless @params.file
-		return APIFailure "File invalid!" unless isFile @params.file
+	-- PUBLIC API
+	[login: "/login"]: api =>
+		APIFailure "Missing email!" unless @params.email
+		APIFailure "Missing password!" unless @params.password
+		user = Users\getByEmail @params.email
+		APIFailure "Invalid email!" unless user
+		APIFailure "Invalid password!" unless crypto.digest("md5", @params.password .. user.salt) == user.password_hash
+		token = user\generateToken!
+		APIFailure "Failed to generate token!" unless token
+		APISuccess token: token
+
+	[signup: "/signup"]: api =>
+		APIFailure "Missing email!" unless @params.email
+		APIFailure "Invalid email!" unless @params.email\match "^[%w.]+@%w+%.%w+$"
+		APIFailure "Missing password!" unless @params.password
+		user = Users\getByEmail @params.email
+		APIFailure "Email already in use!" if user
+		salt = uuid!
+		user = Users\create
+			email: @params.email
+			password_hash: crypto.digest "md5", @params.password .. salt
+			salt: salt
+			first_name: ""
+			last_name: ""
+			groups: db.array {GROUP_EVERYONE_ID}
+		token = user\generateToken!
+		APIFailure "Failed to generate token!" unless token
+		APISuccess token: token
+
+	[groups: "/groups"]: api requireAuth =>
+		result = Groups\select "*"
+		for i = #result, 1, -1 do
+			if result[i].hidden
+				table.remove result, i
+		APISuccess result: result
+
+	[groupsCreate: "/groups/create"]: api requireAuth requireAdmin =>
+		APIFailure "Missing name!" unless @params.name
+		group = Groups\getByName @params.name
+		APIFailure "Group already exists!" if group
+		group = Groups\create
+			name: @params.name
+		APISuccess
+			result: group
+
+	[groupsAssign: "/groups/assign"]: api requireAuth requireAdmin =>
+		APIFailure "Missing userId!" unless @params.userId
+		APIFailure "Missing groupId!" unless @params.groupId
+		user = Users\getById @params.userId
+		APIFailure "Invalid userId!" unless user
+		group = Groups\getById @params.groupId
+		APIFailure "Invalid groupId!" unless group
+		insertIfNotExistsIn user.groups @params.groupId
+		user\update "groups"
+		APISuccess!
+
+	-- DEBUG API
+	[debug: "/debug"]: api requireAuth =>
+		APISuccess
+			user: @user
+			users: Users\select "*"
+			groups: Groups\select "*"
+
+	[grantAdmin: "/grant-admin"]: api requireAuth =>
+		insertIfNotExistsIn @user.groups, GROUP_ADMIN_ID
+		@user\update "groups"
+		APISuccess
+			user: @user
+
+	[imageTest: "/image-test"]: api requireAuth =>
+		APIFailure "File missing!" unless @params.file
+		APIFailure "File invalid!" unless isFile @params.file
 		contentPrefix, contentSuffix = @params.file["content-type"]\match "^(.+)/(.+)$"
-		return APIFailure "File must be image!" unless contentPrefix == "image"
-		return APIFailure "Invalid image type!" unless existsIn VALID_IMAGE_TYPES, contentSuffix
+		APIFailure "File must be image!" unless contentPrefix == "image"
+		APIFailure "Invalid image type!" unless existsIn VALID_IMAGE_TYPES, contentSuffix
 		file = io.open "images/#{@params.file.filename}", "w"
 		file\write @params.file.content
 		file\close!
 		APISuccess "Uploaded!"
-
-	[login: "/login"]: =>
-		return APIFailure "Missing username!" unless @params.username
-		return APIFailure "Missing password!" unless @params.password
-		user = Users\find username: @params.username
-		return APIFailure "Invalid username!" unless user
-		return APIFailure "Invalid password!" unless crypto.digest("md5", @params.password .. user.salt) == user.password_hash
-		token = generateToken user
-		return APIFailure "Failed to generate token!" unless token
-		APISuccess token: token
-
-	[signup: "/signup"]: =>
-		return APIFailure "Missing username!" unless @params.username
-		return APIFailure "Missing password!" unless @params.password
-		user = Users\find username: @params.username
-		return APIFailure "Username already exists!" if user
-		salt = uuid!
-		user = Users\create
-			username: @params.username
-			password_hash: crypto.digest "md5", @params.password .. salt
-			salt: salt
-		token = generateToken user
-		return APIFailure "Failed to generate token!" unless token
-		APISuccess token: token
-
-	[report: "/report"]: requiresAuth (user) =>
-
-	[fetch: "/fetch"]: requiresAuth (user) =>

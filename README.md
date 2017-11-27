@@ -15,3 +15,57 @@ return "YOUR_SECRET_HERE" -- change me
   6. navigate to `http://localhost/EmployeeTracker`
 
 ### Routes
+
+##### Users
+
+**GET** /user
+```JSON
+{
+	"success": true,
+	"result": [
+		{
+			"first_name": "",
+			"email": "talbotwhite@gmail.com",
+			"last_name": "",
+			"id": 1
+		},
+		{
+			"first_name": "",
+			"email": "test@example.com",
+			"last_name": "",
+			"id": 2
+		},
+		{
+			"first_name": "John",
+			"email": "test2@example.com",
+			"last_name": "Doe",
+			"id": 3
+		}
+	]
+}
+```
+
+**GET** /user/{USER_ID}
+```JSON
+{
+	"success": true,
+	"result": {
+		"first_name": "John",
+		"email": "test2@example.com",
+		"last_name": "Doe",
+		"id": 3
+	}
+}
+```
+
+##### Groups
+
+**GET** /group
+
+**GET** /group/{GROUP_ID}
+
+##### Locations
+
+**GET** /location/{USER_ID}
+
+**POST** /location/report (Double x, Double y)

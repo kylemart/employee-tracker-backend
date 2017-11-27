@@ -14,6 +14,7 @@ class extends lapis.Application
 	[user: "/:id"]: api =>
 		user = Users\find({id: @params.id})
 		-- sanitize data
+		APIFailure("No user found by that id!") unless user
 		APISuccess({result: {
 			id: user.id
 			email: user.email

@@ -39,4 +39,12 @@ import types, create_table from require "lapis.db.schema"
 			name: "Administrators"
 			hidden: true
 		})
+
+		db.insert("groups", {
+			name: "Moving Squad"
+		})
+
+		db.insert("groups", {
+			name: "Technicians"
+		})
 }

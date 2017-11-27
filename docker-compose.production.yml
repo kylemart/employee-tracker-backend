@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
   postgres-service:
@@ -7,22 +7,43 @@ services:
       - postgres-data:/var/lib/postgresql/data
     ports:
       - 5432:5432
+    networks:
+      - internal
+    labels:
+      - traefik.enable=false
 
   migration-service:
     build: .
     depends_on:
       - postgres-service
     command: ["./wait-for-it.sh", "postgres-service:5432", "--", "lapis", "migrate", "production"]
+    networks:
+      - internal
+    labels:
+      - traefik.enable=false
 
   main-service:
+    container_name: main-service
     build: .
     environment:
       - LAPIS_ENV=production
-    ports:
-      - 80:80
     depends_on:
       - migration-service
+    networks:
+      - internal
+      - proxy
+    labels:
+      - traefik.backend=main-service
+      - traefik.frontend.rule=Host:tracker.osyr.is
+      - traefik.docker.network=proxy
+      - traefik.port=80
 
 volumes:
   postgres-data:
     external: true
+
+networks:
+  proxy:
+    external: true
+  internal:
+    external: false

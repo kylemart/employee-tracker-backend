@@ -2,7 +2,7 @@ lapis = require("lapis")
 db = require("lapis.db")
 
 import APISuccess, APIFailure from require("utility")
-import api, requireAuth, requireAdmin from require("filters")
+import api, auth, requireAdmin from require("filters")
 
 Users = require("classes/Users")
 Groups = require("classes/Groups")
@@ -17,4 +17,7 @@ class extends lapis.Application
 		APISuccess({result: Groups\find({id: @params.id})})
 
 	[users: "/:id/users"]: api =>
-		APISuccess({result: Users\select("* where groups @> ARRAY[?]", db.raw(@params.id))})
+		APISuccess({result: Users\select("* where groups @> ARRAY[?]", db.raw(@params.id), {fields: "id, email, first_name, last_name"})})
+
+	[many: "/many"]: api =>
+		APISuccess({result: Users\select("* where groups && ARRAY[?]", db.array(@params.ids), {fields: "id, email, first_name, last_name"})})

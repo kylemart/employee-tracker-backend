@@ -1,9 +1,9 @@
-config = require "lapis.config"
+config = require("lapis.config")
 
 config {"development", "production"},
 	port: 80
 	num_workers: 4
-	secret: require "secret"
+	secret: require("secret")
 	postgres:
 		host: "postgres-service"
 		user: "postgres"

@@ -8,7 +8,7 @@ utility.existsIn = (arr, elem) ->
 	return false
 
 utility.insertIfNotExistsIn = (arr, elem) ->
-	unless existsIn(arr, elem)
+	unless utility.existsIn(arr, elem)
 		arr[#arr + 1] = elem
 
 utility.APIResult = (data, success) ->

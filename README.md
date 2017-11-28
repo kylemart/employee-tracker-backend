@@ -8,13 +8,19 @@ Group 19
   2. download Project folders
   3. create `bin/secret.lua` with the following contents:
 ```Lua
-return "YOUR_SECRET_HERE" -- change me
+return "CHANGE_ME"
 ```
   4. run `docker volume create postgres-data`
   5. run `docker-compose -f ./docker-compose.development.yml up --build`
   6. navigate to `http://localhost/EmployeeTracker`
 
 ### Routes
+
+##### System
+
+**POST** /login
+
+**POST** /signup
 
 ##### Users
 

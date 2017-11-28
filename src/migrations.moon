@@ -1,25 +1,25 @@
-db = require "lapis.db"
-import types, create_table from require "lapis.db.schema"
+db = require("lapis.db")
+import types, create_table from require("lapis.db.schema")
 
 {
 	[1]: =>
 		create_table("users", {
 			{"id", types.serial unique: true}		-- serial id
 			{"email", types.varchar unique: true}	-- unique email
-			{"password_hash", types.varchar}		-- md5 digest of password+salt
-			{"salt", types.varchar}					-- UUID generated at signup
 			{"first_name", types.varchar}			-- first name
 			{"last_name", types.varchar}			-- last name
-			{"groups", types.integer array: true}	-- array of group ids user is a member of
-			"PRIMARY KEY (id)"
-		})
+			
+			{"password_hash", types.varchar}		-- md5 digest of password+salt
+			{"salt", types.varchar}					-- UUID generated at signup
 
-		create_table("locations", {
-			{"id", types.integer unique: true}		-- serial id
-			{"x", types.double}						-- longitude
-			{"y", types.double}						-- latitude
+			{"groups", types.integer array: true}	-- array of group ids user is a member of
+			
+			{"lat", types.double}					-- longitude
+			{"lng", types.double}					-- latitude
+
 			{"updated_at", types.time}				-- timestamp
 			{"created_at", types.time}				-- timestamp
+
 			"PRIMARY KEY (id)"
 		})
 
@@ -40,11 +40,17 @@ import types, create_table from require "lapis.db.schema"
 			hidden: true
 		})
 
+		-- misc groups
+
 		db.insert("groups", {
 			name: "Moving Squad"
 		})
 
 		db.insert("groups", {
 			name: "Technicians"
+		})
+
+		db.insert("groups", {
+			name: "Zookeepers"
 		})
 }

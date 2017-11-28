@@ -15,10 +15,10 @@ Groups = require("classes/Groups")
 VALID_IMAGE_TYPES = {"png", "jpg"}
 
 import existsIn, insertIfNotExistsIn, APISuccess, APIFailure from require("utility")
-import api, requireAuth, requireAdmin from require("filters")
+import api, auth, admin from require("filters")
 
 isFile = (input) ->
-	type input == "table"			and
+	type(input) == "table"			and
 	input.filename					and
 	input.filename ~= ""			and
 	input.content					and
@@ -26,11 +26,15 @@ isFile = (input) ->
 	input["content-type"]			and
 	input["content-type"] ~= ""
 
+assignGroup = (user, groupId) ->
+	groupId = tonumber(groupId)
+	insertIfNotExistsIn(user.groups, groupId)
+	user\update("groups")
+	return user
 
 class EmployeeTracker extends lapis.Application
 	@include("applications/users")
 	@include("applications/groups")
-	@include("applications/locations")
 
 	default_route: =>
 		if @req.parsed_url.path\match("./$")
@@ -47,7 +51,11 @@ class EmployeeTracker extends lapis.Application
 
 	handle_404: => {layout: false}, "Failed to find route: #{@req.cmd_url}"
 
-	[index: "/"]: api => APISuccess("Hello World!")
+	[index: "/"]: api =>
+		APISuccess({
+			users: Users\select("*")
+			groups: Groups\select("*")
+		})
 
 	-- PUBLIC API
 	[login: "/login"]: api =>
@@ -58,7 +66,14 @@ class EmployeeTracker extends lapis.Application
 		APIFailure("Invalid password!") unless crypto.digest("md5", @params.password .. user.salt) == user.password_hash
 		token = user\generateToken!
 		APIFailure("Failed to generate token!") unless token
-		APISuccess token: token
+		APISuccess({
+			id: user.id
+			token: token
+			isAdmin: user\isInGroupById(Groups.ADMIN_ID)
+			email: user.email
+			first_name: user.first_name
+			last_name: user.last_name
+		})
 
 	[signup: "/signup"]: api =>
 		APIFailure("Missing email!") unless @params.email
@@ -66,32 +81,59 @@ class EmployeeTracker extends lapis.Application
 		APIFailure("Missing password!") unless @params.password
 		APIFailure("Email already in use!") if Users\find({email: @params.email})
 		salt = uuid!
+
+		groups = {Groups.EVERYONE_ID}
+		for group in *Groups\select("*")
+			if math.random(2) == 1
+				table.insert(groups, group.id)
+
 		user = Users\create({
 			email: @params.email
 			password_hash: crypto.digest("md5", @params.password .. salt)
 			salt: salt
 			first_name: @params.first_name or ""
 			last_name: @params.last_name or ""
-			groups: db.array {Groups.EVERYONE_ID}
+			groups: db.array(groups)
+			lat: 0
+			lng: 0
 		})
 		token = user\generateToken!
 		APIFailure("Failed to generate token!") unless token
-		APISuccess({token: token})
-
-	-- DEBUG API
-	[debug: "/debug"]: api requireAuth =>
 		APISuccess({
-			user: @user.id
-			users: Users\select("*")
-			groups: Groups\select("*")
+			id: user.id
+			token: token
+			isAdmin: user\isInGroupById(Groups.ADMIN_ID)
+			email: user.email
+			first_name: user.first_name
+			last_name: user.last_name
 		})
 
-	[grantAdmin: "/grant-admin"]: api requireAuth =>
-		insertIfNotExistsIn(@user.groups, Groups.ADMIN_ID)
-		@user\update("groups")
-		APISuccess({user: @user})
+	[report: "/report"]: api auth =>
+		@user\update({
+			lat: @params.lat
+			lng: @params.lng
+		})
+		APISuccess({result: @user})
 
-	[imageTest: "/image-test"]: api requireAuth =>
+	-- TEST --
+
+	[createGroup: "/create-group"]: api =>
+		APISuccess({result: Groups\create({
+			name: @params.name
+		})})
+
+	[assignGroup: "/assign-group"]: api => APISuccess({user: assignGroup(Users\find({id: @params.userId}), @params.groupId)})
+	
+	[clearGroup: "/clear-group"]: api =>
+		user = Users\find({id: @params.userId})
+		user\update({
+			groups: db.array({Groups.EVERYONE_ID})
+		})
+		return APISuccess({user: user})
+
+	[grantAdmin: "/grant-admin"]: api => APISuccess({user: assignGroup(Users\find({id: @params.id}), Groups.ADMIN_ID)})
+
+	[imageTest: "/image-test"]: api auth =>
 		APIFailure("File missing!") unless @params.file
 		APIFailure("File invalid!") unless isFile(@params.file)
 		contentPrefix, contentSuffix = @params.file["content-type"]\match("^(.+)/(.+)$")

@@ -23,5 +23,5 @@ class extends lapis.Application
 
 	[many: "/many"]: api =>
 		APISuccess({
-			result: Users\select("* where groups && ARRAY[?]", db.array(@params.ids), {fields: "id, email, first_name, last_name, lat, lng"})
+			result: Users\select("* where groups && ARRAY[?]", db.array(@params.ids), {fields: "id, email, first_name, last_name, lat, lng, profile_pic"})
 		})

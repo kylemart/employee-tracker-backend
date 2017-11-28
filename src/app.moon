@@ -96,7 +96,10 @@ class EmployeeTracker extends lapis.Application
 			groups: db.array(groups)
 			lat: 0
 			lng: 0
+			profile_img: ""
+			verify_img: ""
 		})
+
 		token = user\generateToken!
 		APIFailure("Failed to generate token!") unless token
 		APISuccess({

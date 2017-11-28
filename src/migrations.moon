@@ -17,6 +17,9 @@ import types, create_table from require("lapis.db.schema")
 			{"lat", types.double}					-- longitude
 			{"lng", types.double}					-- latitude
 
+			{"profile_img", types.text}
+			{"verify_img", types.text}
+
 			{"updated_at", types.time}				-- timestamp
 			{"created_at", types.time}				-- timestamp
 

@@ -1,7 +1,7 @@
 lapis = require("lapis")
 db = require("lapis.db")
 
-import APISuccess, APIFailure from require("utility")
+import filter, APISuccess, APIFailure from require("utility")
 import api, auth, requireAdmin from require("filters")
 
 Users = require("classes/Users")
@@ -38,4 +38,19 @@ class extends lapis.Application
 			first_name: user.first_name
 			last_name: user.last_name
 			groups: groups
+			profile_img: user.profile_img
 		}})
+
+	[updateProfilePic: "/update/profile"]: api auth =>
+		@user\update({
+			profile_img: @params.data
+		})
+		APISuccess({result: filter(@user, {"id", "first_name", "last_name", "profile_img", "verify_img"})})
+
+	[updateVerifyPic: "/update/verify"]: api auth =>
+		@user\update({
+			verify_img: @params.data
+		})
+		APISuccess({result: filter(@user, {"id", "first_name", "last_name", "profile_img", "verify_img"})})
+
+

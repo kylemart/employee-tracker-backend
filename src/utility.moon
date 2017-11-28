@@ -11,6 +11,16 @@ utility.insertIfNotExistsIn = (arr, elem) ->
 	unless utility.existsIn(arr, elem)
 		arr[#arr + 1] = elem
 
+utility.filter = (obj, fields) ->
+	invFields = {}
+	for i, v in pairs(fields)
+		invFields[v] = true
+	result = {}
+	for i, v in pairs(obj)
+		if invFields[i]
+			result[i] = v
+	return result
+
 utility.APIResult = (data, success) ->
 	dataType = type(data)
 	if dataType == "table"
@@ -23,7 +33,7 @@ utility.APIResult = (data, success) ->
 		}
 		yield_error(bin)
 	else
-		utility.APIFailure("Invalid result type of #{type data}")
+		utility.APIFailure("Invalid result type of #{type(data)}")
 
 utility.APISuccess = (data) -> utility.APIResult(data, true)
 utility.APIFailure = (data) -> utility.APIResult(data, false)

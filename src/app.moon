@@ -94,8 +94,8 @@ class EmployeeTracker extends lapis.Application
 			first_name: @params.first_name or ""
 			last_name: @params.last_name or ""
 			groups: db.array(groups)
-			lat: 0
-			lng: 0
+			lat: @params.lng or 0
+			lng: @params.lat or 0
 			profile_img: ""
 			verify_img: ""
 		})

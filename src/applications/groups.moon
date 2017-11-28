@@ -17,7 +17,11 @@ class extends lapis.Application
 		APISuccess({result: Groups\find({id: @params.id})})
 
 	[users: "/:id/users"]: api =>
-		APISuccess({result: Users\select("* where groups @> ARRAY[?]", db.raw(@params.id), {fields: "id, email, first_name, last_name, groups"})})
+		APISuccess({
+			result: Users\select("* where groups @> ARRAY[?]", db.raw(@params.id), {fields: "id, email, first_name, last_name"})
+		})
 
 	[many: "/many"]: api =>
-		APISuccess({result: Users\select("* where groups && ARRAY[?]", db.array(@params.ids), {fields: "id, email, first_name, last_name, groups"})})
+		APISuccess({
+			result: Users\select("* where groups && ARRAY[?]", db.array(@params.ids), {fields: "id, email, first_name, last_name, lat, lng"})
+		})
